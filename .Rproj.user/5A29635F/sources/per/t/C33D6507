@@ -1,0 +1,26 @@
+{
+    "id": "C33D6507",
+    "path": "~/local-git/Teaching-R/Alberta Bio Grad Workshop Series/02-Data_manipulation_with_DT.R",
+    "project_path": null,
+    "type": "r_source",
+    "hash": "1809975740",
+    "contents": "",
+    "dirty": false,
+    "created": 1701127203293.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "146,94",
+        "scrollLine": "135"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1684363802,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1684363802,
+    "read_only": false,
+    "read_only_alternatives": []
+}

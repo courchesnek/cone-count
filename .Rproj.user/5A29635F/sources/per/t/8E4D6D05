@@ -1,0 +1,27 @@
+{
+    "id": "8E4D6D05",
+    "path": "~/local-git/cone-count/scripts/sample_cone_count.R",
+    "project_path": "scripts/sample_cone_count.R",
+    "type": "r_source",
+    "hash": "2987195547",
+    "contents": "",
+    "dirty": false,
+    "created": 1701124145308.0,
+    "source_on_save": false,
+    "relative_order": 3,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "112,0",
+        "scrollLine": "87"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1701133175,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1701133175143,
+    "read_only": false,
+    "read_only_alternatives": []
+}
