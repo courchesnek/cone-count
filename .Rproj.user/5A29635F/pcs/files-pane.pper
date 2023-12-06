@@ -2,8 +2,8 @@
     "sortOrder": [
         {
             "columnIndex": 2,
-            "ascending": true
+            "ascending": false
         }
     ],
-    "path": "~/local-git/Teaching-R/Alberta Bio Grad Workshop Series"
+    "path": "~/local-git/HR_PopCycle_SnowshoeHares/scripts"
 }
