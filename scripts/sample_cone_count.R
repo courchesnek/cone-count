@@ -19,7 +19,7 @@ dat[, grep("total", names(dat)) := NULL ]
 conecols <- c(grep("old", names(dat), value = TRUE), grep("new", names(dat), value = TRUE))
 
 #classify all cone cols to be numeric
-dat <- dat %>% mutate_at(conecols, as.numeric)
+dat <- dat %>% as.data.table(mutate_at(conecols, as.numeric))
 
 #examples of how to explore data
 dat[gr == "BT", length(unique(squirrel_id)), Year]

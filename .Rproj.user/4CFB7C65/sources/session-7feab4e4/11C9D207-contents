@@ -19,7 +19,7 @@ dat[, grep("total", names(dat)) := NULL ]
 conecols <- c(grep("old", names(dat), value = TRUE), grep("new", names(dat), value = TRUE))
 
 #classify all cone cols to be numeric
-dat <- dat %>% mutate_at(conecols, as.numeric)
+dat <- dat %>% as.data.table(mutate_at(conecols, as.numeric))
 
 #examples of how to explore data
 dat[gr == "BT", length(unique(squirrel_id)), Year]
@@ -55,12 +55,14 @@ dt[, quadrat := gsub(c("_new"), c(""), quadrat)]
 dt <- setorder(dt, midden, Year)
 
 
+#create list of midden things
+vars <- c("Year", "midden", "squirrel_id")
 
 # sample ------------------------------------------------------------------
 
 #sum all cone count data by year, midden and squirrel id
 #this combines old and new cones. If you want them separated at 'age' to the by group
-all_8 <- dt[, sum(count), by = .(Year, midden, squirrel_id)] 
+all_8 <- dt[, sum(count), by = vars]
 setnames(all_8, "V1", "count_8")
 
 
@@ -82,35 +84,81 @@ setnames(all_8, "V1", "count_8")
 
 
 #function that randomly samples 4 quadrats
-randomcount4 <- function(cd, samplecol){
+randomcount <- function(cd, samplecol, numb){
+  
   #pull all unique quadrat names from quadrat col
   quads <- cd[, unique(samplecol)]
+  
   #sample 4 of these quadrat names randomly
-  samplequads <- sample(quads, 4, replace = FALSE)
+  samplenumb <- sample(quads, numb, replace = FALSE)
+  
   #subset the data to only include these four quadrats
-  subset <- cd[samplecol %in% samplequads]
+  subset <- cd[samplecol %in% samplenumb]
+  
   #return the sum of this data subset. If you want it partitioned by age, do a by = age
   return(subset[, sum(count)])
   
 }
 
 #run the function by year, midden, and squirrel id.
-all_4 <- dt[, randomcount4(cd = .SD, samplecol = quadrat), by = .(Year, midden, squirrel_id)]
-setnames(all_4, "V1", "count_4")
+all_4 <- dt[, randomcount(cd = .SD, samplecol = quadrat, numb = 4), by = vars]
+setnames(all_4, "V1", "other_count")
+all_4[, sample := 4]
 
+all_5 <- dt[, randomcount(cd = .SD, samplecol = quadrat, numb = 5), by = vars]
+setnames(all_5, "V1", "other_count")
+all_5[, sample := 5]
 
-#if you want to merge into a long table use rbind
+all_6 <- dt[, randomcount(cd = .SD, samplecol = quadrat, numb = 6), by = vars]
+setnames(all_6, "V1", "other_count")
+all_6[, sample := 6]
+
+all_7 <- dt[, randomcount(cd = .SD, samplecol = quadrat, numb = 7), by = vars]
+setnames(all_7, "V1", "other_count")
+all_7[, sample := 7]
+
+all_samples <- rbind(all_4, all_5, all_6, all_7)
+
 
 #to merge into a wide table
-countcompare <- merge(all_8, all_4, by = c("Year", "midden", "squirrel_id"))
+countcompare <- merge(all_samples, all_8, by = vars, all.x = TRUE)
+countcompare[, sample := as.factor(sample)]
 
-#ggplot 4 count against 8 count
+
+#correlation coefficient run by sample size
+correlations <- countcompare[, cor(count_8, other_count, use = "complete.obs"), by = sample]
+
+
+
+
+#using color to differentiate
+(conefig <- 
+  ggplot(countcompare)+
+  geom_abline(intercept = 0, slope = 1, linetype = 2, linewidth = 2, color = "grey40")+
+  geom_point(aes(x = count_8, y = other_count, color = sample), size = 3, alpha = .3)+
+  geom_smooth(aes(x = count_8, y = other_count, color = sample), fill = NA, method = "lm")+
+  labs(x = "Cone count with 8 quadrats", y = "Other cone count")+
+  theme_minimal())
+
+
+#use facet wrap to differentiate
 ggplot(countcompare)+
-  geom_point(aes(x = count_8, y = count_4), color = "blue3")+
+  geom_abline(intercept = 0, slope = 1, linetype = 2, linewidth = 2, color = "grey40")+
+  geom_point(aes(x = count_8, y = other_count), color = "blue", size = 3, alpha = .3)+
+  geom_smooth(aes(x = count_8, y = other_count), fill = NA, method = "lm")+ 
+  labs(x = "Cone count with 8 quadrats", y = "Other cone count")+
+  facet_wrap(~sample, scales = "fixed")+
   theme_minimal()
 
 
 
-cor(countcompare$count_8, countcompare$count_4)
+
+
+
+# save things -------------------------------------------------------------
+
+#file name, figure name, size, units
+ggsave("output/samplesize.jpeg", conefig, width = 6, height = 4, unit = "in")
+
 
 
