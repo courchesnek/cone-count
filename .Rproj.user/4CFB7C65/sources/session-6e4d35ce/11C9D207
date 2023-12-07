@@ -3,7 +3,7 @@
     "path": "~/Documents/GitHub/cone-count/scripts/sample_cone_count.R",
     "project_path": "scripts/sample_cone_count.R",
     "type": "r_source",
-    "hash": "2758169349",
+    "hash": "1711134007",
     "contents": "",
     "dirty": false,
     "created": 1701191556347.0,
@@ -12,15 +12,15 @@
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "28,21",
-        "scrollLine": "0"
+        "cursorPosition": "166,0",
+        "scrollLine": "138"
     },
     "folds": "",
-    "lastKnownWriteTime": 1701900396,
+    "lastKnownWriteTime": 1701921884,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1701900396824,
+    "last_content_update": 1701921884948,
     "read_only": false,
     "read_only_alternatives": []
 }

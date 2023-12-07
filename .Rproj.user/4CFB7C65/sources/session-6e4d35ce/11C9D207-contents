@@ -58,6 +58,15 @@ dt <- setorder(dt, midden, Year)
 #create list of midden things
 vars <- c("Year", "midden", "squirrel_id")
 
+dt[, Year := as.numeric(Year)]
+
+dt[, count := as.numeric(count)]
+
+#remove NAs from dt counts
+dt <- dt[!is.na(count)]
+#make sure there are no remaining NAs
+na_rows <- dt[is.na(count)]
+
 # sample ------------------------------------------------------------------
 
 #sum all cone count data by year, midden and squirrel id
@@ -125,10 +134,14 @@ countcompare <- merge(all_samples, all_8, by = vars, all.x = TRUE)
 countcompare[, sample := as.factor(sample)]
 
 
-#correlation coefficient run by sample size
-correlations <- countcompare[, cor(count_8, other_count, use = "complete.obs"), by = sample]
+#correlation coefficient run by sample size, added r^2 and sample size
+correlations <- countcompare[, .(correlation = cor(count_8, other_count, use = "complete.obs"),
+                                 r_squared = cor(count_8, other_count, use = "complete.obs")^2,
+                                 n = sum(!is.na(count_8))),
+                             by = sample]
 
-
+#calculate standard errors
+correlations[, se_correlation := sqrt((1 - correlation^2) / (n - 2))]
 
 
 #using color to differentiate
@@ -139,7 +152,6 @@ correlations <- countcompare[, cor(count_8, other_count, use = "complete.obs"), 
   geom_smooth(aes(x = count_8, y = other_count, color = sample), fill = NA, method = "lm")+
   labs(x = "Cone count with 8 quadrats", y = "Other cone count")+
   theme_minimal())
-
 
 #use facet wrap to differentiate
 ggplot(countcompare)+
