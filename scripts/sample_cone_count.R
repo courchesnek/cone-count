@@ -72,7 +72,7 @@ na_rows <- dt[is.na(count)]
 
 #sum all cone count data by year, midden and squirrel id
 #this combines old and new cones. If you want them separated at 'age' to the by group
-all_8 <- dt[, sum(count), by = vars]
+all_8 <- dt[, sum(count)/8, by = vars]
 setnames(all_8, "V1", "count_8")
 
 
@@ -94,7 +94,7 @@ setnames(all_8, "V1", "count_8")
 
 
 #function that randomly samples 4 quadrats
-randomcount <- function(cd, samplecol, numb){
+randomcount <- function(cd, samplecol, numb){ #cd = cone data, samplecol = quadrat column, numb = how many quadrats sampled
   
   #pull all unique quadrat names from quadrat col
   quads <- cd[, unique(samplecol)]
@@ -106,7 +106,7 @@ randomcount <- function(cd, samplecol, numb){
   subset <- cd[samplecol %in% samplenumb]
   
   #return the sum of this data subset. If you want it partitioned by age, do a by = age
-  return(subset[, sum(count)])
+  return(subset[, sum(count)/numb])
   
 }
 
@@ -133,13 +133,14 @@ all_samples <- rbind(all_4, all_5, all_6, all_7)
 #to merge into a wide table
 countcompare <- merge(all_samples, all_8, by = vars, all.x = TRUE)
 countcompare[, sample := as.factor(sample)]
+setnames(countcompare, "sample", "X")
 
 
 #correlation coefficient run by sample size, added r^2 and sample size
 correlations <- countcompare[, .(correlation = cor(count_8, other_count, use = "complete.obs"),
   r_squared = cor(count_8, other_count, use = "complete.obs")^2,
   n = sum(!is.na(count_8))),
-  by = sample]
+  by = X]
 
 #calculate standard errors
 correlations[, se_correlation := sqrt((1 - correlation^2) / (n - 2))]
@@ -149,9 +150,9 @@ correlations[, se_correlation := sqrt((1 - correlation^2) / (n - 2))]
 (conefig <- 
   ggplot(countcompare)+
   geom_abline(intercept = 0, slope = 1, linetype = 2, linewidth = 2, color = "grey40")+
-  geom_point(aes(x = count_8, y = other_count, color = sample), size = 3, alpha = .3)+
-  geom_smooth(aes(x = count_8, y = other_count, color = sample), fill = NA, method = "lm")+
-  labs(x = "Cone count with 8 quadrats", y = "Other cone count")+
+  geom_point(aes(x = count_8, y = other_count, color = X), size = 3, alpha = .3)+
+  geom_smooth(aes(x = count_8, y = other_count, color = X), fill = NA, method = "lm")+
+  labs(x = "Average number of cones per quadrat with 8 quadrats", y = "Average number of cones per quadrat with X quadrats")+
   theme_minimal())
 
 #use facet wrap to differentiate
@@ -164,7 +165,7 @@ ggplot(countcompare)+
   theme_minimal()
 
 
-#4 and 8 count by year -------------------------------------------------------------
+#4 and 8 count by year ----------------------------------------------------------------------
 
 
 #remove 'sample' column from all_4
@@ -183,7 +184,7 @@ countcompare4_8[, Year := as.factor(Year)]
     geom_abline(intercept = 0, slope = 1, linetype = 2, linewidth = 2, color = "grey40")+
     geom_point(aes(x = count_8, y = count_4, color = Year), size = 3, alpha = .3)+
     geom_smooth(aes(x = count_8, y = count_4, color = Year), fill = NA, method = "lm")+
-    labs(x = "Cone count with 8 quadrats", y = "Cone count with 4 quadrats")+
+    labs(x = "Average number of cones per quadrat with 8 quadrats", y = "Average number of cones per quadrat with 4 quadrats")+
     theme_minimal())
 
 
@@ -201,27 +202,23 @@ correlations_48_by_year[, se_correlation := sqrt((1 - correlation^2) / (n - 2))]
 
 
 #setting up quickcount correlation data table
-columns_to_extract <- c("Year", "squirrel_id", "CA1", "midden")
+columns_to_extract <- c("Year", "midden", "squirrel_id", "CA1")
 quickcount <- dat[, ..columns_to_extract, with = FALSE]
-quickcount <- setorder(quickcount, midden, Year)
 setnames(quickcount, "CA1", "quick_count")
 
-quick_count <- quickcount$quick_count
-new_order <- c("Year", setdiff(names(quickcount), "Year"))
-quickcount <- quickcount[, ..new_order, with = FALSE]
-
 #remove NAs from quick count
+quickcount[, quick_count := as.numeric(quick_count)]
 quickcount <- quickcount[!is.na(quick_count)]
 
-#separate count and sample
+#separate count and X "sample"
 all_8 <- all_8 %>%
-  separate(count_8, into = c("count", "sample"), sep = "(?<=\\d)(?=[A-Za-z])")
-all_8[, sample := 8]
+  separate(count_8, into = c("count", "X"), sep = "(?<=\\d)(?=[A-Za-z])")
+all_8[, X := 8]
 
 
 all_4 <- all_4 %>%
-  separate(count_4, into = c("count", "sample"), sep = "(?<=\\d)(?=[A-Za-z])")
-all_4[, sample := 4]
+  separate(count_4, into = c("count", "X"), sep = "(?<=\\d)(?=[A-Za-z])")
+all_4[, X := 4]
 
 #rbind count 8 and 4 by sample
 count8_4 <- rbind(all_4, all_8)
@@ -237,7 +234,7 @@ quickcount8_4$quick_count <- as.numeric(quickcount8_4$quick_count)
 quickcountcorrelations <- quickcount8_4[, .(correlation = cor(count, quick_count, use = "complete.obs"),
   r_squared = cor(count, quick_count, use = "complete.obs")^2,
   n = sum(!is.na(count))),
-  by = sample]
+  by = X]
 
 quickcountcorrelations[, se_correlation := sqrt((1 - correlation^2) / (n - 2))]
 
@@ -246,52 +243,48 @@ quickcountcorrelations[, se_correlation := sqrt((1 - correlation^2) / (n - 2))]
 (conefig3 <- 
     ggplot(quickcount8_4)+
     geom_abline(intercept = 0, slope = 1, linetype = 2, linewidth = 2, color = "grey40")+
-    geom_point(aes(x = quick_count, y = count, color = sample), size = 3, alpha = .3)+
-    geom_smooth(aes(x = quick_count, y = count, color = sample), fill = NA, method = "lm")+
-    labs(x = "Quick count", y = "Quadrat count")+
+    geom_point(aes(x = quick_count, y = count, color = X), size = 3, alpha = .3)+
+    geom_smooth(aes(x = quick_count, y = count, color = X), fill = NA, method = "lm")+
+    labs(x = "Quick count", y = "Average number of cones per quadrat with X quadrats")+
     theme_minimal())
 
 
 
 #Total count --------------------------------------------------------------
-dat[, midden_area := (pi * Length/2 * Width/2)]
-
-count8_4[, count := as.numeric(count)]
-count8_4[, sample := as.character(sample)]
-count8_4$average_cones <- count8_4$count / as.numeric(count8_4$sample)
+dat[, midden_area := (pi * (Length/2) * (Width/2))]
 
 columns_to_extract <- c("Year", "midden", "squirrel_id", "CA1", "midden_area")
 total_count <- dat[, ..columns_to_extract, with = FALSE]
 setnames(total_count, "CA1", "quick_count")
 
 total_count_area <- merge(total_count, count8_4, by = vars, all.x = TRUE)
-total_count_area[, count := NULL]
+total_count_area[, count := as.numeric(count)]
 
-total_count_area[, total_cones := midden_area * average_cones]
+total_count_area[, total_cones := (midden_area * (count/120))]
+total_count_area[, quick_count := as.numeric(quick_count)]
+total_count_area <- total_count_area[!is.na(quick_count)]
+
 total_count_area[, midden_area := NULL]
 total_count_area[, average_cones := NULL]
-
-total_count_area <- na.omit(total_count_area)
-total_count_area <- total_count_area[!is.na(quick_count)]
 
 
 (conefig4 <- 
     ggplot(total_count_area)+
     geom_abline(intercept = 0, slope = 1, linetype = 2, linewidth = 2, color = "grey40")+
-    geom_point(aes(x = quick_count, y = total_cones, color = sample), size = 3, alpha = .3)+
-    geom_smooth(aes(x = quick_count, y = total_cones, color = sample), fill = NA, method = "lm")+
-    labs(x = "Quick count", y = "Total cones")+
+    geom_point(aes(x = quick_count, y = total_cones, color = X), size = 3, alpha = .3)+
+    geom_smooth(aes(x = quick_count, y = total_cones, color = X), fill = NA, method = "lm")+
+    labs(x = "Quick count", y = "Total cones on the midden")+
     theme_minimal())
 
 
 # save things -------------------------------------------------------------
 
 #file name, figure name, size, units
-ggsave("output/samplesize.jpeg", conefig, width = 6, height = 4, unit = "in")
+ggsave("output/samplesizeb.jpeg", conefig, width = 8, height = 6, unit = "in")
 
-ggsave("output/4_8_by_year.jpeg", conefig2, width = 6, height = 4, unit = "in")
+ggsave("output/4_8_by_year.jpeg", conefig2, width = 8, height = 6, unit = "in")
 
-ggsave("output/quickcount_4_8.jpeg", conefig3, width = 6, height = 4, unit = "in")
+ggsave("output/quickcount_4_8.jpeg", conefig3, width = 8, height = 6, unit = "in")
 
 
 
