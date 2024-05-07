@@ -35,7 +35,7 @@ dat[, midden := paste0(gr, "_", reflo)]
 #classify year as numeric
 dat[, Year := as.numeric(Year)]
 
-
+dat[, area := Width*Length]
 
 # create new data frame ---------------------------------------------------
 
@@ -43,7 +43,7 @@ dat[, Year := as.numeric(Year)]
 meltdat <- melt(dat, measure.vars = conecols, value.name = "count", variable.name = "quadrat")
 
 #subset the melted data to just columns of interest
-dt <- meltdat[, .(Year, midden, squirrel_id, quadrat, count)]
+dt <- meltdat[, .(Year, midden, squirrel_id, quadrat, count, CA1, area)]
 
 #make age of cones its own column by splitting from quadrat column
 dt[, age := tstrsplit(quadrat, "_", keep = 2)]
@@ -54,10 +54,6 @@ dt[, quadrat := gsub(c("_new"), c(""), quadrat)]
 
 #set order of subset data to by by midden then year
 dt <- setorder(dt, midden, Year)
-
-
-#create list of midden things
-vars <- c("Year", "midden", "squirrel_id")
 
 dt[, Year := as.numeric(Year)]
 
@@ -70,10 +66,37 @@ na_rows <- dt[is.na(count)]
 
 # sample ------------------------------------------------------------------
 
+#create list of by's
+vars <- c("Year", "midden", "squirrel_id", "CA1", "area")
+
 #sum all cone count data by year, midden and squirrel id
 #this combines old and new cones. If you want them separated at 'age' to the by group
-all_8 <- dt[, sum(count)/8, by = vars]
-setnames(all_8, "V1", "count_8")
+all_8 <- dt[, .(count_8 = sum(count)/8), by = vars]
+
+all_8[, CA1 := as.numeric(CA1)]
+
+#calculate avg cone count in 8 quadrants multiplied by area
+all_8[, total_cone := area*count_8]
+
+#basic test for stan, does cone assessment predict the total cones
+summary(lm(total_cone ~ CA1, all_8))
+stan1 <- ggplot(all_8)+
+  geom_point(aes(x = CA1, y = total_cone))
+ggsave("output/figure_for_stan.jpeg", stan1, width = 5, height = 4, unit = "in")
+
+
+ggplot(all_8)+
+  geom_point(aes(x = total_cone, y = count_8))
+
+summary(lm(count_8 ~ total_cone, all_8))
+
+
+ggplot(all_8)+
+  geom_point(aes(x = area, y = total_cone))
+
+summary(lm(total_cone ~ area + count_8, all_8))
+
+summary(lm(total_cone ~ count_8, all_8))
 
 
 # 
